@@ -1,0 +1,51 @@
+{
+    "name": "thecodezone/craft-socialite",
+    "description": "Login to Craft with third-party services like Azure and Google. ",
+    "type": "craft-plugin",
+    "version": "0.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "socialite"
+    ],
+    "support": {
+        "docs": "https://github.com/thecodezone/socialite/blob/master/README.md",
+        "issues": "https://github.com/thecodezone/socialite/issues"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "CodeZone",
+            "homepage": "https://codezone.io"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.1.0",
+        "league/oauth2-client": "^2.4",
+        "thenetworg/oauth2-azure": "^1.4"
+    },
+    "autoload": {
+        "psr-4": {
+            "CodeZone\\socialite\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "socialite",
+        "handle": "socialite",
+        "hasCpSettings": true,
+        "hasCpSection": true,
+        "changelogUrl": "https://raw.githubusercontent.com/thecodezone/socialite/master/CHANGELOG.md",
+        "components": {
+            "socialiteService": "CodeZone\\socialite\\services\\DriversService"
+        },
+        "class": "CodeZone\\socialite\\Socialite"
+    },
+    "require-dev": {
+        "codeception/codeception": "^4.0",
+        "codeception/module-asserts": "^1.1",
+        "vlucas/phpdotenv": "^4.1",
+        "codeception/module-yii2": "^1.0"
+    }
+}

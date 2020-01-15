@@ -1,0 +1,40 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * socialite plugin for Craft CMS 3.x
+ *
+ * socialite index.twig
+ *
+ * @author    CodeZone
+ * @copyright Copyright (c) 2020 CodeZone
+ * @link      https://codezone.io
+ * @package   Socialite
+ * @since     0.0.0
+ */
+#}
+
+{% extends "_layouts/cp" %}
+{% import "_includes/forms" as forms %}
+
+{% do view.registerAssetBundle("CodeZone\\socialite\\assetbundles\\socialite\\SocialiteAsset") %}
+{% do view.registerAssetBundle("CodeZone\\socialite\\assetbundles\\indexcpsection\\IndexCPSectionAsset") %}
+
+{% set docsUrl = "https://github.com/thecodezone/socialite/blob/master/README.md" %}
+
+{% set title = "socialite" %}
+
+{% set pluginCpUrl = url('socialite') %}
+
+{% set iconUrl = view.getAssetManager().getPublishedUrl('@thecodezone/socialite/assetbundles/indexcpsection/dist', true) ~ '/img/Index-icon.svg' %}
+
+{% set extraPageHeaderHtml %}
+    <div class="buttons">
+        <a href="{{ pluginCpUrl }}" class="btn submit add icon">{{ "Click Me!"|t('socialite') }}</a>
+    </div>
+{% endset %}
+
+{% set content %}
+    <h2>{{ "Index CP Section body goes here"|t('socialite') }}</h2>
+    <img src="{{ iconUrl }}" height="64" width="64" />
+    <p class="textline"></p>
+{% endset %}

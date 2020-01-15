@@ -1,0 +1,26 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * socialite plugin for Craft CMS 3.x
+ *
+ * socialite Settings.twig
+ *
+ * @author    CodeZone
+ * @copyright Copyright (c) 2020 CodeZone
+ * @link      https://codezone.io
+ * @package   Socialite
+ * @since     0.0.0
+ */
+#}
+
+{% import "_includes/forms" as forms %}
+
+{% do view.registerAssetBundle("CodeZone\\socialite\\assetbundles\\socialite\\SocialiteAsset") %}
+
+{{ forms.textField({
+    label: 'Some Field',
+    instructions: 'Enter some setting here.',
+    id: 'someAttribute',
+    name: 'someAttribute',
+    value: settings['someAttribute']})
+}}
