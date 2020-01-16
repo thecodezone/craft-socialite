@@ -11,6 +11,6 @@ class RegisterUrlRules extends Listener
 
     function handle(Event $event)
     {
-        $event->rules['socialite/<slug:{slug}>/auth'] = 'socialite/auth/handle';
+        $event->rules['socialite/<slug:{slug}>/auth'] = 'socialite/auth/handshake';
     }
 }

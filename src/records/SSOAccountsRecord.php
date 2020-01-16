@@ -20,7 +20,7 @@ use craft\db\ActiveRecord;
  * @package   Socialite
  * @since     0.0.0
  */
-class SocialiteRecord extends ActiveRecord
+class SSOAccountsRecord extends ActiveRecord
 {
     // Public Static Methods
     // =========================================================================
@@ -30,6 +30,6 @@ class SocialiteRecord extends ActiveRecord
      */
     public static function tableName()
     {
-        return '{{%socialite_socialiterecord}}';
+        return '{{%socialite_sso_accounts}}';
     }
 }

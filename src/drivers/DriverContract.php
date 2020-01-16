@@ -12,7 +12,6 @@ interface DriverContract
     public static function label(): string;
     public static function isConfigured(): bool;
     public function getProvider(): AbstractProvider;
-    public function handleRequest(Request $request);
     public function handleConnect(Request $request);
     public function handleCallback(Request $request);
     public function getConfig();

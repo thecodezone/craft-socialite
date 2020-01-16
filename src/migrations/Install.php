@@ -2,7 +2,7 @@
 /**
  * socialite plugin for Craft CMS 3.x
  *
- * Login to Craft with third-party services like Azure and Google. 
+ * Login to Craft with third-party services like Azure and Google.
  *
  * @link      https://codezone.io
  * @copyright Copyright (c) 2020 CodeZone
@@ -51,7 +51,7 @@ class Install extends Migration
         return true;
     }
 
-   /**
+    /**
      * @inheritdoc
      */
     public function safeDown()
@@ -72,18 +72,20 @@ class Install extends Migration
     {
         $tablesCreated = false;
 
-        $tableSchema = Craft::$app->db->schema->getTableSchema('{{%socialite_socialiterecord}}');
+        $tableSchema = Craft::$app->db->schema->getTableSchema('{{%socialite_sso_accounts}}');
         if ($tableSchema === null) {
             $tablesCreated = true;
             $this->createTable(
-                '{{%socialite_socialiterecord}}',
+                '{{%socialite_sso_accounts}}',
                 [
-                    'id' => $this->primaryKey(),
-                    'dateCreated' => $this->dateTime()->notNull(),
-                    'dateUpdated' => $this->dateTime()->notNull(),
-                    'uid' => $this->uid(),
-                    'siteId' => $this->integer()->notNull(),
-                    'some_field' => $this->string(255)->notNull()->defaultValue(''),
+                    'id' => $this->integer()->notNull(),
+                    'userId' => $this->integer()->notNull(),
+                    'provider' => $this->string(255)->notNull(),
+                    'token' => $this->string(2048)->notNull(),
+                    'ssoId' => $this->string(255)->notNull(),
+                    'refreshToken' => $this->string(2048)->notNull(),
+                    'dateCreated' => $this->timestamp()->notNull(),
+                    'dateUpdated' => $this->timestamp()->notNull()
                 ]
             );
         }
@@ -98,21 +100,25 @@ class Install extends Migration
     {
         $this->createIndex(
             $this->db->getIndexName(
-                '{{%socialite_socialiterecord}}',
-                'some_field',
+                '{{%socialite_sso_accounts}}',
+                'token',
                 true
             ),
-            '{{%socialite_socialiterecord}}',
-            'some_field',
+            '{{%socialite_sso_accounts}}',
+            'token',
             true
         );
-        // Additional commands depending on the db driver
-        switch ($this->driver) {
-            case DbConfig::DRIVER_MYSQL:
-                break;
-            case DbConfig::DRIVER_PGSQL:
-                break;
-        }
+
+        $this->createIndex(
+             $this->db->getIndexName(
+                '{{%socialite_sso_accounts}}',
+                'userId',
+                false
+             ),
+            '{{%socialite_sso_accounts}}',
+            'userId',
+            false
+        );
     }
 
     /**
@@ -121,20 +127,39 @@ class Install extends Migration
     protected function addForeignKeys()
     {
         $this->addForeignKey(
-            $this->db->getForeignKeyName('{{%socialite_socialiterecord}}', 'siteId'),
-            '{{%socialite_socialiterecord}}',
-            'siteId',
-            '{{%sites}}',
+            $this->db->getForeignKeyName('{{%social_login_accounts}}', 'userId'),
+            '{{%social_login_accounts}}',
+            'userId',
+            '{{%users}}',
             'id',
             'CASCADE',
-            'CASCADE'
+            null
+        );
+
+        $this->addForeignKey(
+            $this->db->getForeignKeyName('{{%social_login_accounts}}', 'id'),
+            '{{%social_login_accounts}}', 'id', '{{%elements}}',
+            'id',
+            'CASCADE',
+            null
         );
     }
 
     /**
+     * Populates the DB with the default data.
+     *
      * @return void
      */
     protected function insertDefaultData()
+    {
+    }
+
+    /**
+     * Removes the indexes needed for the Records used by the plugin
+     *
+     * @return void
+     */
+    protected function removeIndexes()
     {
     }
 

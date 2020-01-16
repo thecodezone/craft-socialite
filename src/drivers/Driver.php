@@ -123,26 +123,9 @@ abstract class Driver implements DriverContract
     }
 
     /**
-     * Perform the auth connection
-     */
-    public function handleRequest(Request $request)
-    {
-        $state = $request->get('state');
-
-        // If we don't have an authorization code then get one
-        if (!$request->get('code')) {
-            return $this->handleConnect($request);
-        // Check given state against previously stored one to mitigate CSRF attack
-        } elseif (!$state || ($state !== \Craft::$app->getSession()->get(self::SESSION_OAUTH_STATE))) {
-            \Craft::$app->getSession()->remove(self::SESSION_OAUTH_STATE);
-            throw new OauthException('Invalid State');
-        } else {
-            return $this->handleCallback($request);
-        }
-    }
-
-    /**
-     * @throws OauthException
+     * @param Request $request
+     * @return \craft\web\Response|\yii\console\Response
+     * @throws \craft\errors\MissingComponentException
      */
     public function handleConnect(Request $request)
     {
@@ -177,14 +160,6 @@ abstract class Driver implements DriverContract
         }
 
         return $accessToken;
-    }
-
-    // Protected Methods
-    // =========================================================================
-
-    protected function storeToken(AccessToken $accessToken)
-    {
-        \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken->getToken());
     }
 
     protected function getSessionTokenKey(): string
