@@ -10,6 +10,7 @@
 
 namespace CodeZone\socialite\controllers;
 
+use Adbar\Dot;
 use CodeZone\socialite\drivers\DriverContract;
 use CodeZone\socialite\Exception\OAuthException;
 use CodeZone\socialite\records\SSOAccountsRecord;
@@ -18,14 +19,12 @@ use CodeZone\socialite\Socialite;
 use Craft;
 use craft\elements\User;
 use craft\events\LoginFailureEvent;
-use craft\helpers\UrlHelper;
 use craft\helpers\User as UserHelper;
 use craft\web\Controller;
 use craft\web\ServiceUnavailableHttpException;
 use League\OAuth2\Client\Token\AccessToken;
 use yii\web\BadRequestHttpException;
 use yii\web\HttpException;
-use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
@@ -117,8 +116,9 @@ class AuthController extends Controller
 
         $user = Craft::$app->users->getUserById($account->userId);
         if (!$user) {
-            $user = $this->_registerUser($driver);
+            $user = $this->_newUser($driver, $token);
         }
+        $this->_populateUser($user, $driver, $token);
 
         $account->userId = $user->id;
         $account->token = $token->getToken();
@@ -128,15 +128,51 @@ class AuthController extends Controller
         return $user;
     }
 
-    protected function _registerUser(DriverContract $driver)
+    /**
+     * New up a user using the email and username from the account owner.
+     *
+     * @param DriverContract $driver
+     * @param AccessToken $token
+     * @return User
+     */
+    protected function _newUser(DriverContract $driver, AccessToken $token)
     {
-        $data = $driver->getUserData();
         $user = new User();
-        $user->email = $driver['email'];
-        $user->username = (!isset($data['username']) || Craft::$app->getConfig()->getGeneral()->useEmailAsUsername) ? $user->email : $data['username'];
-        $user->firstName = isset($data['firstName']) ? $data['firstName'] : null;
-        $user->lastName = isset($data['lastName']) ? $data['lastName'] : null;
-        Craft::$app->elements->saveElement($user);
+        $map = $driver->getUserFieldMap();
+        $owner =  new Dot($driver->getOwner($token)->toArray());
+
+        $user->email = $owner->get($map['email']);
+        $user->username = ($owner->has($map['username']) || Craft::$app->getConfig()->getGeneral()->useEmailAsUsername) ? $owner->get($map['username']) : $owner->get($map['email']);
+
+        return $user;
+    }
+
+    /**
+     * Fill a user using data from the account owner.
+     *
+     * @param User $user
+     * @param $driver
+     * @param $token
+     * @return User
+     */
+    protected function _populateUser(User $user, $driver, $token)
+    {
+        $owner = $driver->getOwner($token)->toArray();
+        $map = $driver->getUserFieldMap();
+        $restricted = ['email', 'username', 'preferredLocale', 'weekStartDay'];
+        $tableFields = ['firstName', 'lastName'];
+        $dot = new Dot($owner);
+
+        foreach ($map as $field => $dotNotation) {
+            if (!in_array($field, $restricted) && $dot->has($dotNotation)) {
+                if (in_array($field, $tableFields)) {
+                    $user->$field = $dot->get($dotNotation);
+                } else {
+                    $user->setFieldValue($field, $dot->get($dotNotation));
+                }
+            }
+        }
+
         return $user;
     }
 

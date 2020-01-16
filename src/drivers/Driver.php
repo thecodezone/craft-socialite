@@ -3,10 +3,13 @@
 
 namespace CodeZone\socialite\drivers;
 
+use craft\helpers\ArrayHelper;
 use craft\helpers\StringHelper;
 use craft\test\Craft;
 use craft\web\Request;
+use craft\web\User;
 use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use CodeZone\socialite\Exception\OauthException;
 use CodeZone\socialite\Socialite;
@@ -27,10 +30,9 @@ abstract class Driver implements DriverContract
      */
     protected $_provider;
 
-
     public function __construct($provider = null)
     {
-        $this->_provider = $provider ? $provider : $this->provider();
+        $this->_provider = $provider ? $provider : $this->provider($this->getConfig());
     }
 
     // Public Static methods
@@ -72,6 +74,11 @@ abstract class Driver implements DriverContract
         return isset($providers[static::slug()]);
     }
 
+
+    // Public methods
+    // =========================================================================
+
+
     /**
      * Get the auth URL.
      * @return string
@@ -81,16 +88,25 @@ abstract class Driver implements DriverContract
         return \Craft::$app->getUrlManager()->createUrl(Socialite::$plugin->getHandle() . '/' . static::slug() . '/auth');
     }
 
-
-    // Public methods
-    // =========================================================================
+    /**
+     * Get the owner
+     * @param AccessToken $accessToken
+     * @return mixed
+     */
+    public function getOwner(AccessToken $accessToken): ResourceOwnerInterface
+    {
+        return $this->getOauthProvider()->getResourceOwner($accessToken->token);
+    }
 
     /**
-     * Instantiate and return the provider.
-     *
-     * @return AbstractProvider
+     * Return an array that maps user field keys to provider field keys.
+     * @return array
      */
-    abstract protected function provider(): AbstractProvider;
+    public function getUserFieldMap(): array
+    {
+        $configMap = isset($this->getConfig()['userFieldMap']) ? $this->getConfig()['userFieldMap'] : [];
+        return array_merge($this->userFieldMap(), $configMap);
+    }
 
     /**
      * Get the providers config.
@@ -162,6 +178,16 @@ abstract class Driver implements DriverContract
         return $accessToken;
     }
 
+    // Protected methods
+    // =========================================================================
+
+    /**
+     * Instantiate and return the provider.
+     *
+     * @return AbstractProvider
+     */
+    abstract protected function provider(array $config): AbstractProvider;
+
     protected function getSessionTokenKey(): string
     {
         return 'socialite:' . static::slug() . ':token';
@@ -171,6 +197,17 @@ abstract class Driver implements DriverContract
     {
         return [
              'redirectUri' => $this->getUrl()
+        ];
+    }
+
+    /**
+     * Return an array that maps user field keys to provider field keys.
+     * @return array
+     */
+    protected function userFieldMap(): array
+    {
+        return [
+            'email' => 'email'
         ];
     }
 }

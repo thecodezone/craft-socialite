@@ -5,6 +5,8 @@ namespace CodeZone\socialite\drivers;
 
 use craft\web\Request;
 use League\OAuth2\Client\Provider\AbstractProvider;
+use League\OAuth2\Client\Provider\ResourceOwnerInterface;
+use League\OAuth2\Client\Token\AccessToken;
 
 interface DriverContract
 {
@@ -15,4 +17,6 @@ interface DriverContract
     public function handleConnect(Request $request);
     public function handleCallback(Request $request);
     public function getConfig();
+    public function getUserFieldMap(): array;
+    public function getOwner(AccessToken $accessToken): ResourceOwnerInterface;
 }

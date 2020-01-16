@@ -9,10 +9,13 @@ use League\OAuth2\Client\Provider\GenericProvider;
 
 class GenericDriver extends Driver
 {
-    protected function provider(): AbstractProvider
+    /**
+     * Instantiate the provider.
+     * @param array $config
+     * @return AbstractProvider
+     */
+    protected function provider(array $config): AbstractProvider
     {
-        return new GenericProvider(
-            $this->getConfig()
-        );
+        return new GenericProvider($config);
     }
 }
