@@ -10,10 +10,7 @@
 
 namespace CodeZone\socialite\controllers;
 
-use Adbar\Dot;
-use CodeZone\socialite\drivers\DriverContract;
 use CodeZone\socialite\Exception\OAuthException;
-use CodeZone\socialite\records\SSOAccountsRecord;
 use CodeZone\socialite\Socialite;
 
 use Craft;
@@ -22,7 +19,6 @@ use craft\events\LoginFailureEvent;
 use craft\helpers\User as UserHelper;
 use craft\web\Controller;
 use craft\web\ServiceUnavailableHttpException;
-use League\OAuth2\Client\Token\AccessToken;
 use yii\web\BadRequestHttpException;
 use yii\web\HttpException;
 use yii\web\Response;
@@ -50,7 +46,7 @@ class AuthController extends Controller
      *         The actions must be in 'kebab-case'
      * @access protected
      */
-    protected $allowAnonymous = ['handle'];
+    protected $allowAnonymous = ['handshake'];
 
     /**
      * Make sure redirect requests don't get rejected
@@ -68,12 +64,13 @@ class AuthController extends Controller
     {
         if (!Craft::$app->getUser()->getIsGuest()) {
             // Too easy.
-            return $this->_handleSuccessfulLogin(false);
+            return $this->handleSuccessfulLogin(false);
         }
 
         $request = Craft::$app->getRequest();
         $driver = Socialite::$plugin->drivers->find($slug);
         $state = $request->get('state');
+
 
         if (!$driver) {
             throw new HttpException(404);
@@ -88,92 +85,20 @@ class AuthController extends Controller
                 \Craft::$app->getSession()->remove($driver::SESSION_OAUTH_STATE);
                 throw new OauthException('Invalid State');
             } else {
-                $accessToken = $this->handleCallback($request);
+                $accessToken = $driver->handleCallback($request);
             }
+
+            $user = Socialite::$plugin->users->fromToken($driver, $accessToken);
+
         } catch (OAuthException $exception) {
-            return $this->_handleLoginFailure($exception->getMessage());
+            return $this->handleLoginFailure($exception->getMessage());
         }
 
-        $user = $this->_userFromToken($driver, $accessToken);
-        return $this->_loginUser($user);
-    }
+        $result = $this->loginUser($user);
 
-    /**
-     * Find or create a user from a token
-     */
-    protected function _userFromToken(DriverContract $driver, AccessToken $token)
-    {
-        $account = SSOAccountsRecord::where([
-            'ssoId' => $token->getResourceOwnerId(),
-            'provider' => $driver::slug()
-        ])->one();
+        $driver->cleanup($user, $accessToken);
 
-        if (!$account) {
-            $account = new SSOAccountsRecord();
-            $account->ssoId = $token->getResourceOwnerId();
-            $account->provider = $driver::slug();
-        }
-
-        $user = Craft::$app->users->getUserById($account->userId);
-        if (!$user) {
-            $user = $this->_newUser($driver, $token);
-        }
-        $this->_populateUser($user, $driver, $token);
-
-        $account->userId = $user->id;
-        $account->token = $token->getToken();
-        $account->refreshToken = $token->getRefreshToken();
-        Craft::$app->elements->saveElement($account);
-
-        return $user;
-    }
-
-    /**
-     * New up a user using the email and username from the account owner.
-     *
-     * @param DriverContract $driver
-     * @param AccessToken $token
-     * @return User
-     */
-    protected function _newUser(DriverContract $driver, AccessToken $token)
-    {
-        $user = new User();
-        $map = $driver->getUserFieldMap();
-        $owner =  new Dot($driver->getOwner($token)->toArray());
-
-        $user->email = $owner->get($map['email']);
-        $user->username = ($owner->has($map['username']) || Craft::$app->getConfig()->getGeneral()->useEmailAsUsername) ? $owner->get($map['username']) : $owner->get($map['email']);
-
-        return $user;
-    }
-
-    /**
-     * Fill a user using data from the account owner.
-     *
-     * @param User $user
-     * @param $driver
-     * @param $token
-     * @return User
-     */
-    protected function _populateUser(User $user, $driver, $token)
-    {
-        $owner = $driver->getOwner($token)->toArray();
-        $map = $driver->getUserFieldMap();
-        $restricted = ['email', 'username', 'preferredLocale', 'weekStartDay'];
-        $tableFields = ['firstName', 'lastName'];
-        $dot = new Dot($owner);
-
-        foreach ($map as $field => $dotNotation) {
-            if (!in_array($field, $restricted) && $dot->has($dotNotation)) {
-                if (in_array($field, $tableFields)) {
-                    $user->$field = $dot->get($dotNotation);
-                } else {
-                    $user->setFieldValue($field, $dot->get($dotNotation));
-                }
-            }
-        }
-
-        return $user;
+        return $result;
     }
 
 
@@ -183,11 +108,11 @@ class AuthController extends Controller
      * @return Response|null
      * @throws BadRequestHttpException
      */
-    protected function _loginUser(User $user)
+    protected function loginUser(User $user)
     {
         if (!Craft::$app->getUser()->getIsGuest()) {
             // Too easy.
-            return $this->_handleSuccessfulLogin(false);
+            return $this->handleSuccessfulLogin(false);
         }
 
         $rememberMe = (bool)Craft::$app->getRequest()->getBodyParam('rememberMe');
@@ -206,10 +131,10 @@ class AuthController extends Controller
         // Try logging them in
         if (!Craft::$app->getUser()->login($user, $duration)) {
             // Unknown error
-            return $this->_handleLoginFailure(null, $user);
+            return $this->handleLoginFailure(null, $user);
         }
 
-        return $this->_handleSuccessfulLogin(true);
+        return $this->handleSuccessfulLogin(true);
     }
 
     /**
@@ -220,7 +145,7 @@ class AuthController extends Controller
      * @return Response|null
      * @throws ServiceUnavailableHttpException
      */
-    private function _handleLoginFailure(string $authError = null, User $user = null)
+    private function handleLoginFailure(string $authError = null, User $user = null)
     {
         $message = UserHelper::getLoginFailureMessage($authError, $user);
 
@@ -247,7 +172,7 @@ class AuthController extends Controller
             'errorMessage' => $event->message,
         ]);
 
-        return null;
+        throw new HttpException(401, $event->message);
     }
 
     /**
@@ -257,7 +182,7 @@ class AuthController extends Controller
      * @param bool $setNotice Whether a flash notice should be set, if this isn't an Ajax request.
      * @return Response
      */
-    private function _handleSuccessfulLogin(bool $setNotice): Response
+    private function handleSuccessfulLogin(bool $setNotice): Response
     {
         // Get the return URL
         $userSession = Craft::$app->getUser();

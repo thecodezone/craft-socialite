@@ -11,8 +11,7 @@
 namespace CodeZone\socialite;
 
 use craft\services\Plugins;
-use CodeZone\socialite\drivers\AzureDriver;
-use CodeZone\socialite\drivers\GenericDriver;
+
 use CodeZone\socialite\listeners\RegisterCpUrlRules;
 use CodeZone\socialite\listeners\RegisterDrivers;
 use CodeZone\socialite\listeners\RegisterUrlRules;
@@ -20,7 +19,8 @@ use CodeZone\socialite\listeners\RegisterVariable;
 use CodeZone\socialite\services\DriversService;
 use CodeZone\socialite\services\ProvidersService as SocialiteServiceService;
 use CodeZone\socialite\models\Settings;
-
+use CodeZone\socialite\services\UserService;
+use CodeZone\socialite\services\UsersService;
 use Craft;
 use craft\base\Plugin;
 use craft\web\UrlManager;
@@ -83,7 +83,9 @@ class Socialite extends Plugin
         );
 
         $this->setComponents([
-            'drivers' => DriversService::class
+            'drivers' => DriversService::class,
+            'users' => UsersService::class,
+            'user' => UserService::class
         ]);
 
         Craft::info(

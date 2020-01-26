@@ -12,11 +12,6 @@ namespace CodeZone\socialite\services;
 
 use CodeZone\socialite\drivers\DriverContract;
 use CodeZone\socialite\Exception\OAuthException;
-use League\OAuth2\Client\Provider\AbstractProvider;
-use CodeZone\socialite\drivers\Driver;
-use CodeZone\socialite\Socialite;
-
-use Craft;
 use craft\base\Component;
 
 /**

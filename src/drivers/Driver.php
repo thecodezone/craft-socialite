@@ -3,11 +3,11 @@
 
 namespace CodeZone\socialite\drivers;
 
-use craft\helpers\ArrayHelper;
+use Adbar\Dot;
+use CodeZone\socialite\records\SSOAccountsRecord;
 use craft\helpers\StringHelper;
-use craft\test\Craft;
 use craft\web\Request;
-use craft\web\User;
+use craft\elements\User;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
@@ -28,11 +28,11 @@ abstract class Driver implements DriverContract
      * The provider classname.
      * @var
      */
-    protected $_provider;
+    protected $provider;
 
     public function __construct($provider = null)
     {
-        $this->_provider = $provider ? $provider : $this->provider($this->getConfig());
+        $this->provider = $provider ? $provider : $this->provider($this->getConfig());
     }
 
     // Public Static methods
@@ -85,7 +85,7 @@ abstract class Driver implements DriverContract
      */
     public function getUrl(): string
     {
-        return \Craft::$app->getUrlManager()->createUrl(Socialite::$plugin->getHandle() . '/' . static::slug() . '/auth');
+        return trim(\Craft::getAlias('@web')) . '/' . Socialite::$plugin->getHandle() . '/' . static::slug() . '/auth';
     }
 
     /**
@@ -95,7 +95,7 @@ abstract class Driver implements DriverContract
      */
     public function getOwner(AccessToken $accessToken): ResourceOwnerInterface
     {
-        return $this->getOauthProvider()->getResourceOwner($accessToken->token);
+        return $this->getProvider()->getResourceOwner($accessToken);
     }
 
     /**
@@ -127,15 +127,7 @@ abstract class Driver implements DriverContract
      */
     public function getProvider(): AbstractProvider
     {
-        return $this->_provider;
-    }
-
-    /**
-     * Get the token
-     */
-    public function getToken()
-    {
-        return \Craft::$app->getSession()->get($this->getSessionTokenKey());
+        return $this->provider;
     }
 
     /**
@@ -165,21 +157,100 @@ abstract class Driver implements DriverContract
 
         try {
             // Try to get an access token using the authorization code grant.
-            $accessToken = $this->getProvider()->getAccessToken('authorization_code', [
-                'code' => $request->get('code')
-            ]);
-
-            $this->storeToken($accessToken);
-
+            $accessToken = $this->generateAccessToken($request->get('code'));
         } catch (IdentityProviderException $e) {
-            throw new OauthException('Failed to get the access token.', $e);
+            throw new OauthException('Failed to get the access token.', $e->getCode(), $e);
         }
 
         return $accessToken;
     }
 
+    /**
+     * Get the owner ID for an access token from the Oauth provider.
+     * @param AccessToken $accessToken
+     * @return mixed
+     */
+    public function getOwnerId(AccessToken $accessToken)
+    {
+        return $this->getOwner($accessToken)->getId();
+    }
+
+    /**
+     * Check to see if we have a session access token. If not, refresh the stored token.
+     * @return bool|\League\OAuth2\Client\Token\AccessTokenInterface|mixed
+     * @throws \craft\errors\MissingComponentException
+     */
+    public function getAccessToken()
+    {
+        $user = \Craft::$app->getUser();
+
+        if (!$user) {
+            return false;
+        }
+
+        $accessToken = \Craft::$app->getSession()->get($this->getSessionTokenKey());
+
+        if ($accessToken) {
+            return $accessToken;
+        }
+
+        $account = SSOAccountsRecord::find()->where([
+            'userId' => $user->getId(),
+            'provider' => static::slug()
+        ])->one();
+
+        if (!$account) {
+            return false;
+        }
+
+        $accessToken = $this->refreshAccessToken($account->refreshToken);
+        Socialite::$plugin->users->syncSsoAccount($account, $accessToken);
+
+        return $accessToken;
+    }
+
+    /**
+     * Do any additional steps the driver needs to do after a user is logged in.
+     * @param $accessToken
+     * @param $user
+     * @param $ssoAccount
+     */
+    public function cleanup(User $user, AccessToken $token)
+    {
+        //To be extended
+    }
+
+
+
     // Protected methods
     // =========================================================================
+
+
+    protected function generateAccessToken($code)
+    {
+        $accessToken = $this->getProvider()->getAccessToken('authorization_code', array_merge(
+                $this->getAccessTokenDefaults(), [
+                'code' => $code
+            ])
+        );
+
+        \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+
+        return $accessToken;
+    }
+
+    protected function refreshAccessToken($refreshToken)
+    {
+        $accessToken = $this->getProvider()->getAccessToken('refresh_token', array_merge(
+                $this->getAccessTokenDefaults(), [
+                'refresh_token' => $refreshToken
+            ])
+        );
+
+        \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+
+        return $accessToken;
+    }
 
     /**
      * Instantiate and return the provider.
@@ -196,7 +267,14 @@ abstract class Driver implements DriverContract
     protected function getConfigDefaults(): array
     {
         return [
-             'redirectUri' => $this->getUrl()
+             'redirectUri' => $this ->getUrl()
+        ];
+    }
+
+    protected function getAccessTokenDefaults(): array
+    {
+        return [
+            'resource' => "https://graph.microsoft.com/"
         ];
     }
 

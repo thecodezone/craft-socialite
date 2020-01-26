@@ -19,4 +19,6 @@ interface DriverContract
     public function getConfig();
     public function getUserFieldMap(): array;
     public function getOwner(AccessToken $accessToken): ResourceOwnerInterface;
+    public function getOwnerId(AccessToken $accessToken);
+    public function getAccessToken();
 }

@@ -28,12 +28,22 @@ class SocialiteVariable
      * @param null $optional
      * @return string
      */
-    public function exampleVariable($optional = null)
+    public function url($provider)
     {
-        $result = "And away we go to the Twig template...";
-        if ($optional) {
-            $result = "I'm feeling optional today...";
+        $driver = Socialite::$plugin->drivers->find($provider);
+        return $driver->getUrl();
+    }
+
+    public function get($provider, $endpoint)
+    {
+        $token = Socialite::$plugin->user->token($provider);
+
+        if (!$token) {
+            return false;
         }
-        return $result;
+
+        $driver = Socialite::$plugin->drivers->find($provider);
+
+        return $driver->getProvider()->get($endpoint, $token);
     }
 }
