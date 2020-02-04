@@ -4,6 +4,7 @@
 namespace CodeZone\socialite\drivers;
 
 
+use CodeZone\socialite\Socialite;
 use craft\helpers\Assets;
 use craft\web\Request;
 use craft\elements\User;
@@ -68,5 +69,18 @@ class AzureDriver extends Driver
         $fileLocation = Assets::tempFilePath($extension);
         file_put_contents($fileLocation, $rawImage);
         \Craft::$app->getUsers()->saveUserPhoto($fileLocation, $user, $filename);
+    }
+
+    public function get($endpoint, $token = null)
+    {
+        if (!$token) {
+            $token = $this->getAccessToken();
+        }
+
+        if (!$token) {
+            return false;
+        }
+
+        return $this->getProvider()->get($endpoint, $token);
     }
 }

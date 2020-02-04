@@ -177,18 +177,26 @@ abstract class Driver implements DriverContract
 
     /**
      * Check to see if we have a session access token. If not, refresh the stored token.
+     *
+     * @param null $user
      * @return bool|\League\OAuth2\Client\Token\AccessTokenInterface|mixed
      * @throws \craft\errors\MissingComponentException
      */
-    public function getAccessToken()
+    public function getAccessToken($user = null)
     {
-        $user = \Craft::$app->getUser();
+        if (!$user) {
+            $user = \Craft::$app->getUser();
+        }
 
         if (!$user) {
             return false;
         }
 
-        $accessToken = \Craft::$app->getSession()->get($this->getSessionTokenKey());
+        if (!\Craft::$app->getRequest()->isConsoleRequest) {
+            $accessToken = \Craft::$app->getSession()->get($this->getSessionTokenKey());
+        } else {
+            $accessToken = null;
+        }
 
         if ($accessToken) {
             return $accessToken;
@@ -234,7 +242,9 @@ abstract class Driver implements DriverContract
             ])
         );
 
-        \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+        if (!\Craft::$app->getRequest()->isConsoleRequest) {
+            \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+        }
 
         return $accessToken;
     }
@@ -247,7 +257,9 @@ abstract class Driver implements DriverContract
             ])
         );
 
-        \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+        if (!\Craft::$app->getRequest()->isConsoleRequest) {
+            \Craft::$app->getSession()->set($this->getSessionTokenKey(), $accessToken);
+        }
 
         return $accessToken;
     }

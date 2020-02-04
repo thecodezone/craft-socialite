@@ -29,21 +29,17 @@ class SocialiteVariable
      * @return string
      */
     public function url($provider)
-    {
-        $driver = Socialite::$plugin->drivers->find($provider);
-        return $driver->getUrl();
+    {;
+        return $this->driver($provider)->getUrl();
     }
 
-    public function get($provider, $endpoint)
+    public function provider($slug)
     {
-        $token = Socialite::$plugin->user->token($provider);
+        $this->driver($slug)->getProvider();
+    }
 
-        if (!$token) {
-            return false;
-        }
-
-        $driver = Socialite::$plugin->drivers->find($provider);
-
-        return $driver->getProvider()->get($endpoint, $token);
+    public function driver($slug)
+    {
+        return Socialite::$plugin->drivers->find($slug);
     }
 }
