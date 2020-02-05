@@ -2,7 +2,6 @@
     "name": "thecodezone/craft-socialite",
     "description": "Login to Craft with third-party services like Azure and Google. ",
     "type": "craft-plugin",
-    "version": "0.0.0",
     "keywords": [
         "craft",
         "cms",
