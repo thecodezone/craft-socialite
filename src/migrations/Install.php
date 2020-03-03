@@ -101,17 +101,6 @@ class Install extends Migration
     protected function createIndexes()
     {
         $this->createIndex(
-            $this->db->getIndexName(
-                '{{%socialite_sso_accounts}}',
-                'token',
-                true
-            ),
-            '{{%socialite_sso_accounts}}',
-            'token',
-            true
-        );
-
-        $this->createIndex(
              $this->db->getIndexName(
                 '{{%socialite_sso_accounts}}',
                 'userId',

@@ -41,7 +41,7 @@ class UsersService extends Component
 
         $this->populate($user, $driver, $token);
         Craft::$app->elements->saveElement($user);
-
+        $user = Craft::$app->users->getUserByUsernameOrEmail($user->email);
         $account->userId = $user->id;
 
         $this->syncSsoAccount($account, $token);
