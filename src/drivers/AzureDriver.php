@@ -50,6 +50,40 @@ class AzureDriver extends Driver
      */
     public function cleanup(User $user, AccessToken $token)
     {
+        $this->syncPhoto($user, $token);
+        $this->syncEmail($user, $token);
+    }
+
+    /**
+     * Sync the users primary email from azure
+     * @param User $user
+     * @param AccessToken $token
+     * @throws \Throwable
+     * @throws \craft\errors\ElementNotFoundException
+     * @throws \yii\base\Exception
+     */
+    public function syncEmail(User $user, AccessToken $token)
+    {
+        $me = $this->getProvider()->get('me?$select=mail', $token);
+        if ($me && $me['mail']) {
+            if (\Craft::$app->getUsers()->getUserByUsernameOrEmail($me['mail'])) {
+                return;
+            }
+        }
+        $user->email = $me['mail'];
+        \Craft::$app->getElements()->saveElement($user);
+    }
+
+    /**
+     * Sync the users photo from azure
+     * @param User $user
+     * @param AccessToken $token
+     * @throws \craft\errors\ImageException
+     * @throws \craft\errors\VolumeException
+     * @throws \yii\base\Exception
+     */
+    public function syncPhoto(User $user, AccessToken $token)
+    {
         if ($user->photo) {
             return;
         }
@@ -62,6 +96,7 @@ class AzureDriver extends Driver
 
         $mimes = new MimeTypes;
         $imageMeta = $this->getProvider()->get('me/photo', $token);
+
         $mime = $imageMeta["@odata.mediaContentType"];
         $extension = $mimes->getExtension($mime);
         $filename = 'azure-profile-' . $user->id . '.' . $extension;
