@@ -88,14 +88,23 @@ class AzureDriver extends Driver
             return;
         }
 
-        $rawImage = $this->getProvider()->get('me/photo/$value', $token);
+        try {
+            $rawImage = $this->getProvider()->get('me/photo/$value', $token);
+        } catch (\Exception $ex) {
+            $rawImage = null;
+        }
+
 
         if (!$rawImage) {
             return;
         }
 
         $mimes = new MimeTypes;
-        $imageMeta = $this->getProvider()->get('me/photo', $token);
+        try {
+            $imageMeta = $this->getProvider()->get('me/photo', $token);
+        } catch (\Exception $ex) {
+            return;
+        }
 
         $mime = $imageMeta["@odata.mediaContentType"];
         $extension = $mimes->getExtension($mime);
