@@ -2,8 +2,6 @@
 
 Login to Craft with third-party services like Azure and Google. 
 
-![Screenshot](resources/img/plugin-logo.png)
-
 ## Requirements
 
 This plugin requires Craft CMS 3.0.0-beta.23 or later.
@@ -24,20 +22,54 @@ To install the plugin, follow these instructions.
 
 ## socialite Overview
 
--Insert text here-
+Provides turn-key social auth to CraftCMS.
+
+The following services are supported: 
+
+- Generic social providers
+- Azure
+- Google
 
 ## Configuring socialite
 
--Insert text here-
+``` php
+    return [
+        'providers' => [
+            'generic' => [
+                'clientId' => getenv('SERVICE_ID'),    // The client ID assigned to you by the provider
+                'clientSecret' => getenv('SERVICE_SECRET'),   // The client password assigned to you by the provider
+                'urlAuthorize' => 'https://example.com/oauth2/lockdin/authorize',
+                'urlAccessToken' => 'https://example.com/oauth2/lockdin/token',
+                'urlResourceOwnerDetails' => 'https://example.com/oauth2/lockdin/resource'
+            ],
+            'azure' => [
+                'clientId' => getenv('AZURE_CLIENT_ID'),
+                'clientSecret' => getenv('AZURE_CLIENT_SECRET')
+            ],
+            'google' => [
+                'clientId' => getenv('GOOGLE_CLIENT_ID'),
+                'clientSecret' => getenv('GOOGLE_CLIENT_SECRET'),
+                'hostedDomain' => getenv('GOOGLE_HOSTED_DOMAIN'),
+            ]
+        ]
+    ];
+```
 
 ## Using socialite
 
--Insert text here-
+### Adding buttons
+
+``` html
+    <a href="{{ craft.socialite.url('azure') }}">
+        Login with Azure
+    </a>
+    <a href="{{ craft.socialite.url('google') }}">
+        Login with Google
+    </a>
+```
 
 ## socialite Roadmap
 
-Some things to do, and ideas for potential features:
-
-* Release it
+- Add more services.
 
 Brought to you by [CodeZone](https://codezone.io)

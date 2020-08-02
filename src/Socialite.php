@@ -1,4 +1,5 @@
 <?php
+
 /**
  * socialite plugin for Craft CMS 3.x
  *
@@ -12,7 +13,6 @@ namespace CodeZone\socialite;
 
 use craft\services\Plugins;
 
-use CodeZone\socialite\listeners\RegisterCpUrlRules;
 use CodeZone\socialite\listeners\RegisterDrivers;
 use CodeZone\socialite\listeners\RegisterUrlRules;
 use CodeZone\socialite\listeners\RegisterVariable;

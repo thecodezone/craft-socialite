@@ -115,7 +115,7 @@ abstract class Driver implements DriverContract
      */
     public function getConfig() {
         if (static::isConfigured()) {
-            return array_merge(Socialite::getInstance()->getSettings()->providers[static::slug()], $this->getConfigDefaults());
+            return array_merge($this->getConfigDefaults(), Socialite::getInstance()->getSettings()->providers[static::slug()]);
         }
         return null;
     }

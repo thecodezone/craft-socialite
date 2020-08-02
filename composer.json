@@ -25,7 +25,8 @@
         "league/oauth2-client": "^2.4",
         "thenetworg/oauth2-azure": "^1.4",
         "adbario/php-dot-notation": "^2.2",
-        "ralouphie/mimey": "^2.1"
+        "ralouphie/mimey": "^2.1",
+        "league/oauth2-google": "^3.0"
     },
     "autoload": {
         "psr-4": {

@@ -51,8 +51,10 @@ class UsersService extends Component
 
     public function syncSsoAccount(SSOAccountsRecord $account, AccessToken $token)
     {
-        $account->token = $token->getToken();
-        $account->refreshToken = $token->getRefreshToken();
+        $refreshToken = $token->getRefreshToken();
+        $accessToken = $token->getToken();
+        $account->token = $accessToken;
+        $account->refreshToken = $refreshToken ? $refreshToken : $accessToken;
         $account->expiresAt = $token->getExpires();
         $account->save();
     }
