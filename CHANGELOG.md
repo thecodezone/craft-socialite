@@ -7,5 +7,5 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## 0.0.0 - 2020-01-14
 ### Initial release
 
-## 0.1.0 - 2020-08-02
+## 1.0.0 - 2020-08-02
 ### Added Google
